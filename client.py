@@ -1,3 +1,4 @@
+from cryptography.fernet import Fernet
 import socket
 import threading
 from typing import Protocol
@@ -43,6 +44,19 @@ class Client(ClientInterface):
             self.gui.bottom_frame, text="Send", height=1, font=self.gui.style.FONT, bg=self.gui.style.PRIMARY_CLR, fg=self.gui.style.WHITE, command=lambda: self.send_msg(self.client_values))
         self.message_button.pack(side=tk.LEFT, padx=3, pady=(7, 7))
 
+        self.encryption_key = Fernet.generate_key()
+        self.cipher_suite = Fernet(self.encryption_key)
+
+    def encrypt_message(self, msg):
+        msg_bytes = msg.encode()
+        encrypted_msg = self.cipher_suite.encrypt(msg_bytes)
+        return encrypted_msg
+
+    def decrypt_message(self, encrypted_msg):
+        decrypted_msg_bytes = self.cipher_suite.decrypt(encrypted_msg)
+        decrypted_msg = decrypted_msg_bytes.decode()
+        return decrypted_msg
+
     def add_message(self, message):
         self.gui.message_box.config(state=tk.NORMAL)
         self.gui.message_box.insert(tk.END, message + '\n')
@@ -76,26 +90,32 @@ class Client(ClientInterface):
 
     def send_msg(self, client_values):
         message = self.gui.message_textbox.get()
-        print({message})
-        if message != '':
-            client_values.client_socket.sendall(message.encode())
-            self.gui.message_textbox.delete(0, len(message))
+        encrypted_msg = self.encrypt_message(message)
+        print(encrypted_msg)
+        if encrypted_msg != '':
+            client_values.client_socket.sendall(encrypted_msg)
+            self.gui.message_textbox.delete(0, len(encrypted_msg))
         else:
             messagebox.showerror("Empty message", "Message cannot be empty")
 
     def listen_for_messages_from_server(self, client):
+        print("listening")
         while 1:
-            message = client.recv(2048).decode('utf-8')
-            if message != '':
-                try:
-                    username = message.split(":")[0]
-                    content = message.split(":")[1]
-                    self.add_message(f'[{username}] {content}')
-                except:
-                    pass
-            else:
-                messagebox.showerror(
-                    "Error.", "Message received from client is empty.")
+            encrypted_msg = client.recv(2048)
+            if encrypted_msg:
+                print(encrypted_msg)
+                decrypted_msg = self.decrypt_message(encrypted_msg)
+                if decrypted_msg:
+                    try:
+                        print(decrypted_msg)
+                        username, content = decrypted_msg.split(":", 1)
+                        print(content)
+                        self.add_message(f'[{username}] {content}')
+                    except ValueError:
+                        print("Invalid message format.")
+                else:
+                    messagebox.showerror(
+                        "Error.", "Empty message")
 
 
 def main():
