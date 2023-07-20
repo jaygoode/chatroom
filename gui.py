@@ -39,8 +39,9 @@ class GUIElements(Protocol):
 
 class GUI(GUIElements, Style, ):
 
-    def __init__(self, client_values, communicate_to_server):
-        self.communicate_to_server = communicate_to_server
+    def __init__(self, client_values):
+        # self.communicate_to_server = client.communicate_to_server
+        # self.send_message_to_server = client.send_message_to_server
         self.client_values = client_values
         self.style = Style()
         self.root = tk.Tk()
@@ -86,31 +87,3 @@ class GUI(GUIElements, Style, ):
         self.message_textbox = tk.Entry(
             self.bottom_frame, font=self.style.FONT, bg=self.style.DARK_GRAY, fg=self.style.WHITE, width=33)
         self.message_textbox.pack(side=tk.LEFT, padx=10)
-
-        # *********************************BUTTONS****************************************
-        self.username_button = tk.Button(
-            self.top_frame, height=1, text="Join", font=self.style.FONT, bg=self.style.PRIMARY_CLR, fg=self.style.WHITE, command=lambda: self.click_connect(client_values))
-        self.username_button.pack(
-            side=tk.LEFT, padx=3, pady=(7, 7))
-
-        self.message_button = tk.Button(
-            self.bottom_frame, text="Send", height=1, font=self.style.FONT, bg=self.style.PRIMARY_CLR, fg=self.style.WHITE, command=self.send_msg)
-        self.message_button.pack(side=tk.LEFT, padx=3, pady=(7, 7))
-
-        self.root.mainloop()
-
-    def send_message_to_chatbox(self, message):
-        self.message_box.config(state=tk.NORMAL)
-        self.message_box.insert(tk.END, message + '\n')
-        self.message_box.config(state=tk.DISABLED)
-
-    def click_connect(self, client_values):
-        try:
-            self.communicate_to_server(self.client_values)
-            self.send_message_to_chatbox("Successfully connected to server!")
-        except:
-            messagebox.showerror("Unable to connect to server",
-                                 f"Unable to connect to server {self.client_values.HOST}:{self.client_values.PORT}")
-
-    def send_msg(self):
-        print("msg btn working!")

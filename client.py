@@ -4,6 +4,7 @@ from typing import Protocol
 from dataclasses import dataclass
 import tkinter as tk
 from gui import GUI
+from tkinter import messagebox
 
 
 @dataclass
@@ -30,8 +31,57 @@ class ClientInterface(Protocol):
 
 
 class Client(ClientInterface):
-    def __init__(self, client_values):
+    def __init__(self, client_values, gui):
         self.client_values = client_values
+        self.gui = gui
+        self.username_button = tk.Button(
+            self.gui.top_frame, height=1, text="Join", font=self.gui.style.FONT, bg=self.gui.style.PRIMARY_CLR, fg=self.gui.style.WHITE, command=lambda: self.connect(self.client_values))
+        self.username_button.pack(
+            side=tk.LEFT, padx=3, pady=(7, 7))
+
+        self.message_button = tk.Button(
+            self.gui.bottom_frame, text="Send", height=1, font=self.gui.style.FONT, bg=self.gui.style.PRIMARY_CLR, fg=self.gui.style.WHITE, command=lambda: self.send_msg(self.client_values))
+        self.message_button.pack(side=tk.LEFT, padx=3, pady=(7, 7))
+
+    def add_message(self, message):
+        self.gui.message_box.config(state=tk.NORMAL)
+        self.gui.message_box.insert(tk.END, message + '\n')
+        self.gui.message_box.config(state=tk.DISABLED)
+
+    def connect(self, client_values,):
+        try:
+
+            # Connect to the server
+            client_values.client_socket.connect(
+                (self.client_values.HOST, self.client_values.PORT))
+            print("Successfully connected to server")
+            self.add_message("[SERVER] Successfully connected to the server")
+        except:
+            messagebox.showerror("Unable to connect to server",
+                                 f"Unable to connect to server {self.client_values.HOST} {self.client_values.PORT}")
+
+        username = self.gui.username_textbox.get()
+        if username != '':
+            client_values.client_socket.sendall(username.encode())
+        else:
+            messagebox.showerror("Invalid username",
+                                 "Username cannot be empty")
+
+        threading.Thread(target=self.listen_for_messages_from_server,
+                         args=(client_values.client_socket, )).start()
+
+        self.gui.username_textbox.config(state=tk.DISABLED)
+        self.username_button.config(state=tk.DISABLED)
+        self.send_message_to_server(client_values.client_socket)
+
+    def send_msg(self, client_values):
+        message = self.gui.message_textbox.get()
+        print({message})
+        if message != '':
+            client_values.client_socket.sendall(message.encode())
+            self.gui.message_textbox.delete(0, len(message))
+        else:
+            messagebox.showerror("Empty message", "Message cannot be empty")
 
     def listen_for_messages_from_server(self, client):
         while 1:
@@ -40,47 +90,20 @@ class Client(ClientInterface):
                 try:
                     username = message.split(":")[0]
                     content = message.split(":")[1]
-                    print(f'[{username}] {content}')
+                    self.add_message(f'[{username}] {content}')
                 except:
                     pass
             else:
-                print("Message received from client is empty.")
-
-    def send_message_to_server(self, client):
-        while 1:
-            message = input("\nMessage: ")
-            if message != '':
-                client.sendall(message.encode())
-            else:
-                print('Message is empty')
-                exit(0)
-
-    def communicate_to_server(self, client):
-        client.connect(
-            (self.client_values.HOST, self.client_values.PORT))
-        print(
-            f"Successfully connected to server {self.client_values.HOST}:{self.client_values.PORT}")
-        username = input("Enter username: ")
-        if username != '':
-            client.sendall(username.encode())
-
-        else:
-            print("Username can not be empty.")
-            exit(0)
-
-        threading.Thread(target=self.listen_for_messages_from_server,
-                         args=(client, )).start()
-
-        self.send_message_to_server(client)
+                messagebox.showerror(
+                    "Error.", "Message received from client is empty.")
 
 
 def main():
     # client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_values = ClientValues()
-    client = Client(client_values)
-    gui = GUI(client_values, client.communicate_to_server)
-
-    client.communicate_to_server(client_values.client_socket)
+    gui = GUI(client_values)
+    client = Client(client_values, gui)
+    gui.root.mainloop()
 
 
 if __name__ == '__main__':
