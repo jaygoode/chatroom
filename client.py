@@ -17,18 +17,21 @@ class ClientValues:
 
 
 class ClientInterface(Protocol):
+    client_values: ClientValues
 
-    def listen_for_messages_from_server(self, client):
+    def listen_for_messages_from_server(self, client) -> None:
         ...
 
-    def send_message_to_server(self, client):
+    def send_message_to_server(self, client) -> None:
         ...
 
-    def communicate_to_server(self, client):
+    def communicate_to_server(self, client) -> None:
         ...
 
 
 class Client(ClientInterface):
+    def __init__(self, client_values):
+        self.client_values = client_values
 
     def listen_for_messages_from_server(self, client):
         while 1:
@@ -53,6 +56,10 @@ class Client(ClientInterface):
                 exit(0)
 
     def communicate_to_server(self, client):
+        client.connect(
+            (self.client_values.HOST, self.client_values.PORT))
+        print(
+            f"Successfully connected to server {self.client_values.HOST}:{self.client_values.PORT}")
         username = input("Enter username: ")
         if username != '':
             client.sendall(username.encode())
@@ -68,20 +75,10 @@ class Client(ClientInterface):
 
 
 def main():
-    gui = GUI()
     # client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client_values = ClientValues()
-    client = Client()
-
-    try:
-        client_values.client_socket.connect(
-            (client_values.HOST, client_values.PORT))
-        print(
-            f"Successfully connected to server {client_values.HOST}:{client_values.PORT}")
-    except:
-        print(
-            f"Unable to connect to server {client_values.HOST}:{client_values.PORT}")
-        exit(0)
+    client = Client(client_values)
+    gui = GUI(client_values, client.communicate_to_server)
 
     client.communicate_to_server(client_values.client_socket)
 
