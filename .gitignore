@@ -1,0 +1,11 @@
+# Ignore Certificate Signing Request (CSR) files
+*.csr
+
+# Ignore Privacy Enhanced Mail (PEM) files
+*.pem
+
+# Ignore Private Key (KEY) files
+*.key
+
+# Ignore Certificate Serial (SRL) files
+*.srl
