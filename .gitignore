@@ -1,17 +1,3 @@
-<<<<<<< HEAD
 venv
 __pycache__
 .vscode
-=======
-# Ignore Certificate Signing Request (CSR) files
-*.csr
-
-# Ignore Privacy Enhanced Mail (PEM) files
-*.pem
-
-# Ignore Private Key (KEY) files
-*.key
-
-# Ignore Certificate Serial (SRL) files
-*.srl
->>>>>>> 502400fa7f0077bcbb90202ea77287671ef2c776
